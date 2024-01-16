@@ -1,0 +1,80 @@
+grammar;
+
+use crate::expr::nodes::*;
+
+pub Expr: Expr = {
+	<f1:FullTerm> <fs:(r"[+-]" FullTerm)*> => {
+		let mut v = vec![f1];
+		v.append(
+			&mut fs.into_iter()
+				.map(|(sgn, f)| {
+					if sgn == "-" {
+						(-f.0, f.1)
+					} else {
+						f
+					}
+				})
+				.collect()
+		);
+		Expr { terms: v }
+	}
+};
+
+FullTerm: (f64, Term) =  {
+	<Number> "*"? <Term>,
+	<Number> => (<>, Term { factors: Vec::new() }),
+	// <Term>   => (1f64, <>),
+}
+
+Term: Term = {
+	<f1:FullFactor> <fs:(r"[*/]"? FullFactor)*> => {
+		let mut v = vec![f1];
+		v.append(
+			&mut fs.into_iter()
+				.map(|(op, f)| {
+					if let Some(op) = op {
+						if op == "*" {
+							f
+						} else {
+							(
+								f.0,
+								Factor::Expr(Expr {
+									terms: vec![(
+										-1f64,
+										Term {
+											factors: vec![(f.1, Factor::Num(1f64))]
+										}
+									)]
+								})
+							)
+						}
+					} else {
+						f
+					}
+				})
+				.collect()
+		);
+		Term { factors: v }
+	}
+};
+
+FullFactor: (Factor, Factor) = {
+	<Factor> "^" <Factor>,
+	<Factor> => (<>, Factor::Num(1f64)),
+};
+
+Factor: Factor = {
+	Var => Factor::Var(<>),
+	Number => Factor::Num(<>),
+	Func => Factor::Func(<>),
+	"(" <Expr> ")" => Factor::Expr(<>),
+};
+
+Func: Func = {
+	"sqrt" "(" <Expr> ")" => Func::Sqrt(<>),
+	"sin" "(" <Expr> ")"  => Func::Sin(<>),
+	"cos" "(" <Expr> ")"  => Func::Cos(<>),
+	"tan" "(" <Expr> ")"  => Func::Tan(<>),}
+
+Number: f64 = r"[+-]?([0-9]*[.])?[0-9]+" => <>.parse().unwrap();
+Var: char = r"[a-zA-Z\p{Greek}]" => <>.chars().nth(0).unwrap();

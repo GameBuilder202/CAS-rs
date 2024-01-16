@@ -1,75 +1,8 @@
-use cas_rs::expr::{eval::*, nodes::*};
+use cas_rs::expr::eval::simplify;
+use cas_rs::parser::parse;
 
 fn main() {
-    let expr = Expr {
-        terms: vec![
-            (
-                1.0,
-                Term {
-                    factors: vec![
-                        (
-                            Factor::Var('x'),
-                            Expr {
-                                terms: vec![(
-                                    1.0,
-                                    Term {
-                                        factors: Vec::new(),
-                                    },
-                                )],
-                            },
-                        ),
-                        (
-                            Factor::Var('y'),
-                            Expr {
-                                terms: vec![(
-                                    1.0,
-                                    Term {
-                                        factors: Vec::new(),
-                                    },
-                                )],
-                            },
-                        ),
-                    ],
-                },
-            ),
-            (
-                2.0,
-                Term {
-                    factors: vec![
-                        (
-                            Factor::Var('x'),
-                            Expr {
-                                terms: vec![(
-                                    1.0,
-                                    Term {
-                                        factors: Vec::new(),
-                                    },
-                                )],
-                            },
-                        ),
-                        (
-                            Factor::Var('y'),
-                            Expr {
-                                terms: vec![(
-                                    1.0,
-                                    Term {
-                                        factors: Vec::new(),
-                                    },
-                                )],
-                            },
-                        ),
-                    ],
-                },
-            ),
-            (
-                1.0,
-                Term {
-                    factors: Vec::new(),
-                },
-            ),
-        ],
-    };
-
+    let expr = parse("1x + 2xy + 3");
     println!("Original expr: {}", expr);
 
     let simpl = simplify(&expr);

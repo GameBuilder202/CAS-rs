@@ -9,7 +9,7 @@ pub struct Expr {
 #[derive(Debug, Clone)]
 pub struct Term {
     // (Base, Exponent)
-    pub factors: Vec<(Factor, Expr)>,
+    pub factors: Vec<(Factor, Factor)>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -30,11 +30,11 @@ pub enum Func {
     Tan(Expr),
 }
 
-pub trait IsConst {
+pub trait AsConst {
     fn get_const(&self) -> Option<f64>;
 }
 
-impl IsConst for Expr {
+impl AsConst for Expr {
     fn get_const(&self) -> Option<f64> {
         if self.terms.len() == 1 && self.terms[0].1.factors.is_empty() {
             let term = &self.terms[0];
@@ -42,6 +42,33 @@ impl IsConst for Expr {
         } else {
             None
         }
+    }
+}
+
+impl AsConst for Factor {
+    fn get_const(&self) -> Option<f64> {
+        match self {
+            Self::Func(f) => f.get_const(),
+            Self::Num(n) => Some(*n),
+            _ => None,
+        }
+    }
+}
+
+impl AsConst for Func {
+    fn get_const(&self) -> Option<f64> {
+        match self {
+            Self::Sqrt(expr) => expr.get_const(),
+            Self::Sin(expr) => expr.get_const(),
+            Self::Cos(expr) => expr.get_const(),
+            Self::Tan(expr) => expr.get_const(),
+        }
+    }
+}
+
+impl From<Expr> for Factor {
+    fn from(expr: Expr) -> Factor {
+        Factor::Expr(expr)
     }
 }
 

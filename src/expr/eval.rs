@@ -24,7 +24,18 @@ pub fn eval(f: fn(char) -> Option<f64>, expr: &Expr) -> Expr {
                                         }
                                         other => other.clone(),
                                     },
-                                    eval(f, exp),
+                                    eval(
+                                        f,
+                                        &Expr {
+                                            terms: vec![(
+                                                1f64,
+                                                Term {
+                                                    factors: vec![(exp.clone(), Factor::Num(1f64))],
+                                                },
+                                            )],
+                                        },
+                                    )
+                                    .into(),
                                 )
                             })
                             .collect(),
@@ -89,7 +100,17 @@ fn collapse_consts(expr: &Expr) -> Expr {
                     }
                 }
             }
-            factor.1 = collapse_consts(&factor.1);
+            match &factor.1 {
+                Factor::Func(f) => match f {
+                    Func::Sqrt(expr) => factor.1 = Factor::Func(Func::Sqrt(collapse_consts(expr))),
+                    Func::Sin(expr) => factor.1 = Factor::Func(Func::Sin(collapse_consts(expr))),
+                    Func::Cos(expr) => factor.1 = Factor::Func(Func::Cos(collapse_consts(expr))),
+                    Func::Tan(expr) => factor.1 = Factor::Func(Func::Tan(collapse_consts(expr))),
+                },
+                Factor::Expr(expr) => factor.1 = collapse_consts(expr).into(),
+                _ => {}
+            }
+            // factor.1 = collapse_consts(&factor.1).into();
 
             if let Some(n) = &factor.1.get_const() {
                 if let Some(coeffn) = coeffn {

@@ -31,6 +31,7 @@ where
     S2: Set<Elem = E>,
     G: Group<S2, E, O>,
     O: Associative<E> + Identity<E> + Invertible<E>,
+    G: Group<S2, E, O>,
 {
 }
 pub trait AbelianGroup<S, E, O>
@@ -52,7 +53,7 @@ where
     // &self isnt really needed but I need to keep it to impl on Fn(&E1) -> E2
     fn map(&self, e: &E1) -> E2;
 }
-pub trait GroupIsomomorphism<G1, S1, E1, O1, G2, S2, E2, O2>
+pub trait GroupIsomorphism<G1, S1, E1, O1, G2, S2, E2, O2>
 where
     G1: Group<S1, E1, O1>,
     S1: Set<Elem = E1>,
@@ -106,17 +107,20 @@ where
 }
 
 // grrr
-// impl<S, E, O, M> Contains for M
+// impl<S, E, O, M> Set for M
 // where
 //     M: Magma<S, E, O>,
+//     S: Set<Elem = E>,
+//     O: ClosedBinOp<E>,
 // {
 //     type Elem = E;
+
 //     fn contains(e: &Self::Elem) -> bool {
 //         S::contains(e)
 //     }
 // }
 
-// Convenience macro because the trait has so many generics
+// Convenience macros because the traits have so many generics
 #[macro_export]
 macro_rules! impl_group_homomorphism {
     ($F:ident $({$bound:path})? (&$self:ident, $e:ident) -> $body:block) => {
@@ -135,8 +139,31 @@ macro_rules! impl_group_homomorphism {
         }
     };
 }
+#[macro_export]
+macro_rules! impl_group_isomorphism {
+    ($F:ident $({$bound:path})? (&$self:ident, $e:ident) -> to $body1:block; from $body2:block) => {
+        impl<G1, S1, E1, O1, G2, S2, E2, O2, F> GroupIsomorphism<G1, S1, E1, O1, G2, S2, E2, O2>
+            for $F
+        where
+            G1: Group<S1, E1, O1>,
+            S1: Set<Elem = E1>,
+            O1: Associative<E1> + Identity<E1> + Invertible<E1>,
+            G2: Group<S2, E2, O2>,
+            S2: Set<Elem = E2>,
+            O2: Associative<E2> + Identity<E2> + Invertible<E2>,
+            $($F: $bound)?,
+        {
+            fn map_to(&$self, $e: &E1) -> E2 $body1
+            fn map_from(&$self, $e: &E2) -> E1 $body2
+        }
+    };
+}
 
-// Not all functions from 1 type to another are group homomorphisms, this was just a test to make sure the macro works
+// Not all functions from a type to another are group homomorphisms, this was just a test to make sure the macro works
 // impl_group_homomorphism!(F {Fn(&E1) -> E2} (&self, e) -> {
 //     self(e)
 // });
+
+impl_group_homomorphism!(F {GroupIsomorphism<G1, S1, E1, O1, G2, S2, E2, O2>} (&self, e) -> { self.map_to(e) });
+// grr this conflicts with automorphisms
+// impl_group_isomorphism! (F {GroupIsomorphism<G2, S2, E2, O2, G1, S1, E1, O1>} (&self, e) -> to { self.map_from(e) }; from { self.map_to(e) });
