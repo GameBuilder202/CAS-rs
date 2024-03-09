@@ -31,7 +31,6 @@ where
     S2: Set<Elem = E>,
     G: Group<S2, E, O>,
     O: Associative<E> + Identity<E> + Invertible<E>,
-    G: Group<S2, E, O>,
 {
 }
 pub trait AbelianGroup<S, E, O>
